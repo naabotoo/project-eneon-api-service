@@ -1,0 +1,28 @@
+@startuml supported_countries
+    entity "SupportedCountry" as supported_countries {
+        * id: UUID
+        * name: VARCHAR
+        * iso_code: VARCHAR
+        * is_enabled: Boolean
+        * created_on: DateTime
+        * updated_on: DateTime
+    }
+
+    entity "SupportedLanguage" as supported_languages {
+        * id: UUID
+        * label: VARCHAR
+        * iso_code: VARCHAR
+        * created_on: DateTime
+        * updated_on: DateTime
+    }
+
+    entity "SupportedCountryLanguage" as supported_country_language {
+        * id: UUID
+        * country_id: UUID
+        * language_id: UUID
+    }
+
+    supported_country_language }|-- supported_countries
+    supported_country_language }|-- supported_languages
+
+@enduml

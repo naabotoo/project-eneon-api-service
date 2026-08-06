@@ -1,0 +1,25 @@
+[package]
+name = "project_eneo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rocket = { version="0.5.1", features = ["json"] }
+tokio = { version = "1.52.3", features = ["full"] }
+reqwest = { version = "0.13", features = ["json"] }
+postgres = "0.19.14"
+tokio-postgres = "0.7.18"
+postgres-native-tls = "0.5.3"
+serde = { version = "1.0", features = ["derive"] }
+tracing = "0.1.44"
+tracing-subscriber = { version="0.3.23", features = [ "json", "env-filter", "time" ] }
+tracing-appender = "0.2.5"
+jsonwebtoken = { version = "10", features = ["rust_crypto"] }
+sqlx = { version= "0.9.0", features = [ "postgres", "runtime-tokio", "uuid", "chrono" ] }
+uuid = { version = "1.24.0", features = [ "v4" ]}
+chrono = "0.4.45"
+dotenvy = "0.15.7"
+rand = "0.10.2"
+rand_chacha = "0.10.0"
+base64 = "0.23.0"
+argon2 = "0.5.3"
