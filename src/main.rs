@@ -123,11 +123,19 @@ impl Authorization for CustomAuthentication {
 
                 let issued_on = claims.iss;
 
+                //check if token is not expired
                 if current_date_time > expires {
                     return Err(AuthError::Forbidden);
                 } else {
-                    println!("audience presented in token : {} and subject : {} expires: {} issued_on: {}", claims.aud, claims.sub, expires_in, issued_on);
-                    return Ok(CustomAuthentication { subject: claims.sub })
+                    //check if api client is enabled on the platform
+                    let is_allowed: bool = api_client_service_impl::api_client_service_impl::is_allowed(claims.sub.as_str()).await.unwrap();
+
+                    if is_allowed {
+                        println!("audience presented in token : {} and subject : {} expires: {} issued_on: {}", claims.aud, claims.sub, expires_in, issued_on);
+                        return Ok(CustomAuthentication { subject: claims.sub })
+                    } else {
+                        return Err(AuthError::Forbidden);
+                    }
                 }
             },
             Err(err) => {

@@ -4,7 +4,7 @@ use std::{ env, str::FromStr };
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier, password_hash::{ SaltString, rand_core::OsRng}};
 use chrono::{ NaiveDateTime };
 use rand::{RngExt, distr::Alphanumeric};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de};
 use sqlx::{AssertSqlSafe, postgres::PgPoolOptions, prelude::FromRow};
 use dotenvy::dotenv;
 use uuid::Uuid;
@@ -67,6 +67,16 @@ use uuid::Uuid;
         pub error_message: String
     }
 
+    #[derive(Debug)]
+    pub struct IsClientValidError {
+        pub error_code: String,
+        pub error_message: String
+    }
+
+    #[derive(Debug, FromRow)]
+    pub struct RecordIsClientValid {
+        is_allowed: bool
+    }
     pub async fn create_credential(
         _client_id: &String,
         _client_secret: &String,
@@ -396,6 +406,39 @@ use uuid::Uuid;
             }
         }
         
+    }
+
+    pub async fn is_allowed(client_id: &str) -> Result<bool, IsClientValidError> {
+        let db_connection = get_db_connection().await;
+
+        match db_connection {
+            Ok(pool) => {
+                let check_query = format!("SELECT is_client_allowed({client_id});");
+
+                let result = sqlx::query_as::<_, RecordIsClientValid>(sqlx::AssertSqlSafe(check_query))
+                .bind(client_id)
+                .fetch_one(&pool)
+                .await;
+
+                match result {
+                    Ok(r) => {
+                        return Ok(r.is_allowed)
+                    },
+                    Err(e) => {
+                        return Err(IsClientValidError { 
+                            error_code: 500.to_string(), 
+                            error_message: e.to_string() 
+                        });
+                    }
+                }
+            },
+            Err(err) => {
+                return Err(IsClientValidError { 
+                    error_code: "500".to_string(), 
+                    error_message: err.to_string() 
+                });
+            }
+        }
     }
 
     async fn get_db_connection() -> Result<sqlx::PgPool, sqlx::Error> {
