@@ -1,8 +1,7 @@
 pub mod api_client_service_impl {
-use core::hash;
 use std::{ env, str::FromStr };
 
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier, password_hash::{ Error::Password, SaltString, rand_core::OsRng}};
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier, password_hash::{ SaltString, rand_core::OsRng}};
 use chrono::{ NaiveDateTime };
 use rand::{RngExt, distr::Alphanumeric};
 use serde::{Deserialize, Serialize};
@@ -363,8 +362,6 @@ use uuid::Uuid;
         match generate_client_secret {
             Ok(secret) => {
                 let secret_value = secret.client_secret;
-
-                println!("generated client secret : {}", secret_value);
 
                 let encrypted_value = encrypt_client_secret(&secret_value).await;
 

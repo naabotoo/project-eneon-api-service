@@ -22,6 +22,10 @@
         * language_id: UUID
     }
 
+    entity "ApiClientCredentialPermission" as api_client_credential_permissions {
+
+    }
+
     supported_country_language }|-- supported_countries
     supported_country_language }|-- supported_languages
 

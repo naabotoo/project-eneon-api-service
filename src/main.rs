@@ -1,8 +1,10 @@
 use std::{str::FromStr};
 
+use chrono::{DateTime, TimeZone, Utc};
 use rocket::{serde::json::Json};
 use rocket::request::Request;
 use rocket::http::Status;
+use rocket_authorization::{AuthError, Authorization, Credential};
 use serde::{Deserialize, Serialize};
 use tracing::Level;
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
@@ -92,6 +94,50 @@ struct FilterOptions {
     limit: Option<usize>,
 }
 
+#[derive(Debug)]
+pub struct CustomAuthentication {
+    pub subject: String
+}
+
+#[rocket::async_trait]
+impl Authorization for CustomAuthentication {
+    const KIND: &'static str = "Bearer";
+
+    async fn parse(_: &str, credential: &str, request: &Request) -> Result<Self, AuthError> { 
+        
+        if credential.is_empty() {
+            return Err(AuthError::HeaderMissing);
+        }
+
+        let uri = request.uri();
+
+        let decode_token: Result<jwt_service_impl::jwt_service_impl::Claims, jwt_service_impl::jwt_service_impl::ClaimsError> = jwt_service_impl::jwt_service_impl::decode_token(&credential.to_string()).await;
+
+        match decode_token {
+            Ok(claims) => {
+                let expires_in = claims.exp;
+
+                let expires: DateTime<Utc> = Utc.timestamp_opt(expires_in as i64, 0).unwrap();
+
+                let current_date_time: DateTime<Utc> = Utc::now();
+
+                let issued_on = claims.iss;
+
+                if current_date_time > expires {
+                    return Err(AuthError::Forbidden);
+                } else {
+                    println!("audience presented in token : {} and subject : {} expires: {} issued_on: {}", claims.aud, claims.sub, expires_in, issued_on);
+                    return Ok(CustomAuthentication { subject: claims.sub })
+                }
+            },
+            Err(err) => {
+                tracing::warn!("error occured while decoding token, message : {}", err.error_message);
+                return Err(AuthError::Unauthorized);
+            }
+        };
+    }
+}
+
 #[get("/", format="json")]
 async fn index() -> Json<IndexPageResponse> {
     tracing::info!("initiating serving index page");
@@ -157,7 +203,7 @@ async fn get_authentication_token(token_request: Json<TokenRequest>) -> (Status,
 }
 
 #[post("/v1/client/credentials", format="json", data="<create_api_credential_request>")]
-async fn create_api_credential(create_api_credential_request: Json<CreateApiCredentialRequest>) -> (Status, Json<CreateApiClientCredentialResponse>) {
+async fn create_api_credential(create_api_credential_request: Json<CreateApiCredentialRequest>, auth: Credential<CustomAuthentication>) -> (Status, Json<CreateApiClientCredentialResponse>) {
     let mut status_code: u16 = 200;
 
     let generated_client_secret: api_client_service_impl::api_client_service_impl::EncryptedClientSecret = api_client_service_impl::api_client_service_impl::generate_and_encrypt_client_secret().await.unwrap();
@@ -189,7 +235,7 @@ async fn create_api_credential(create_api_credential_request: Json<CreateApiCred
 }
 
 #[delete("/v1/client/credentials/<id>", format="json")]
-async fn delete_api_client_credential(id: &str) -> (Status, Json<CreateApiClientCredentialResponse>) {
+async fn delete_api_client_credential(id: &str, auth: Credential<CustomAuthentication>) -> (Status, Json<CreateApiClientCredentialResponse>) {
     let mut http_status: u16 = 200;
 
     let id_as_uuid = Uuid::from_str(id);
@@ -233,7 +279,7 @@ async fn delete_api_client_credential(id: &str) -> (Status, Json<CreateApiClient
 }
 
 #[get("/v1/client/credentials?<filters..>", format="json")]
-async fn get_api_client_credentials(filters: FilterOptions) -> (Status, Json<ListApiClientCredentials>) {
+async fn get_api_client_credentials(filters: FilterOptions, auth: Credential<CustomAuthentication>) -> (Status, Json<ListApiClientCredentials>) {
     let mut status = 200;
 
     let offset: i32 = filters.offset.unwrap() as i32;
@@ -296,9 +342,38 @@ fn internal_server_error(request: &Request) -> Json<CatchResponse> {
     };
 
     let errors = vec![error];
-    let message = String::from_str(Status::from_code(404).unwrap().reason().unwrap());
+    let message = String::from_str(Status::from_code(500).unwrap().reason().unwrap());
 
     return Json(CatchResponse { status: 500, message: message.unwrap(), errors: errors, data: Vec::new() })
+}
+
+#[catch(401)]
+fn unauthorized(request: &Request) -> Json<CatchResponse> {
+    tracing::warn!("unauthorized error: {}", request.uri());
+
+    let error = ResponseError {
+        error_code: 401.to_string(),
+        error_message: format!("unauthorized")
+    };
+
+    let errors = vec![error];
+    let message = String::from_str(Status::from_code(401).unwrap().reason().unwrap());
+
+    return Json(CatchResponse { status: 401, message: message.unwrap(), errors: errors, data: Vec::new() })
+}
+
+#[catch(400)]
+fn bad_request(request: &Request) -> Json<CatchResponse> {
+
+    let error = ResponseError {
+        error_code: 404.to_string(),
+        error_message: format!("bad request not found. uri: {}", request.uri())
+    };
+
+    let errors = vec![error];
+    let message = String::from_str(Status::from_code(400).unwrap().reason().unwrap());
+
+    return Json(CatchResponse { status: 400, message: message.unwrap(), errors: errors, data: Vec::new() })
 }
 
 #[launch]
@@ -323,7 +398,7 @@ fn rocket() -> _ {
     .init();
 
     rocket::build()
-    .register("/", catchers![not_found, internal_server_error])
+    .register("/", catchers![not_found, internal_server_error, unauthorized, bad_request])
     .mount("/", routes![
         index, 
         get_authentication_token, 
