@@ -99,6 +99,37 @@ pub struct CustomAuthentication {
     pub subject: String
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+pub struct ApiClientPermissionResponse {
+    pub status: u16,
+    pub message: String,
+    pub limit: i32,
+    pub offset: i32,
+    pub errors: Vec<ResponseError>,
+    pub data: Vec<ApiClientPermission>
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+pub struct ApiClientPermission {
+    pub client_id: String,
+    pub permissions: Vec<String>
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+pub struct CreateApiClientPermission {
+    pub client_id: String,
+    pub permissions: Vec<ApiClientPermission>
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+pub struct UpdateApiClientPermission {
+
+}
+
 #[rocket::async_trait]
 impl Authorization for CustomAuthentication {
     const KIND: &'static str = "Bearer";
@@ -322,6 +353,116 @@ async fn get_api_client_credentials(filters: FilterOptions, auth: Credential<Cus
         offset: filters.offset.unwrap() as i32,
         data: data
     };
+
+    return (Status::from_code(status).unwrap(), Json(response));
+}
+
+//create permissions to an api client by id
+#[post("/v1/client/credentials/<id>/permissions", format="json", data="<create_api_client_permission>")]
+async fn create_api_client_permission(create_api_client_permission: Json<CreateApiClientPermission>, id: &str, auth: Credential<CustomAuthentication>) -> (Status, Json<ApiClientPermissionResponse>) {
+    let mut status = 200;
+
+    let mut errors: Vec<ResponseError> = Vec::with_capacity(1);
+
+    let mut data: Vec<ApiClientPermission> = Vec::with_capacity(1);
+
+    let response: ApiClientPermissionResponse = ApiClientPermissionResponse {
+        status: status,
+        errors: errors,
+        limit: 0,
+        offset: 0,
+        message: Status::from_code(status).unwrap().reason().unwrap().to_string(),
+        data: data
+    };
+
+
+    return (Status::from_code(status).unwrap(), Json(response));
+}
+
+//update permission to an apu client by id
+#[put("/v1/client/credentials/<id>/permissions/<permission_id>", format="json", data="<update_api_client_permission>")]
+async fn update_api_client_permission(update_api_client_permission: Json<UpdateApiClientPermission>, id: &str, permission_id: &str, auth: Credential<CustomAuthentication>) -> (Status, Json<ApiClientPermissionResponse>) {
+    let mut status = 200;
+
+    let mut errors: Vec<ResponseError> = Vec::with_capacity(1);
+
+    let mut data: Vec<ApiClientPermission> = Vec::with_capacity(1);
+
+    let response: ApiClientPermissionResponse = ApiClientPermissionResponse {
+        status: status,
+        errors: errors,
+        limit: 0,
+        offset: 0,
+        message: Status::from_code(status).unwrap().reason().unwrap().to_string(),
+        data: data
+    };
+
+
+    return (Status::from_code(status).unwrap(), Json(response));
+}
+
+//list all permissions assigned to an api client by id
+#[get("/v1/client/credentials/<id>/permissions", format="json")]
+async fn get_api_client_permission(id: &str, auth: Credential<CustomAuthentication>) -> (Status, Json<ApiClientPermissionResponse>) {
+    let mut status = 200;
+
+    let mut errors: Vec<ResponseError> = Vec::with_capacity(1);
+
+    let mut data: Vec<ApiClientPermission> = Vec::with_capacity(1);
+
+    let response: ApiClientPermissionResponse = ApiClientPermissionResponse {
+        status: status,
+        errors: errors,
+        limit: 0,
+        offset: 0,
+        message: Status::from_code(status).unwrap().reason().unwrap().to_string(),
+        data: data
+    };
+
+
+    return (Status::from_code(status).unwrap(), Json(response));
+}
+
+//delete a permission assigned to an api client by id
+#[delete("/v1/client/credentials/<id>/permissions/<permission_id>", format="json")]
+async fn delete_api_client_permission(id: &str, permission_id: &str, auth: Credential<CustomAuthentication>) -> (Status, Json<ApiClientPermissionResponse>) {
+    let mut status = 200;
+
+    let mut errors: Vec<ResponseError> = Vec::with_capacity(1);
+
+    let mut data: Vec<ApiClientPermission> = Vec::with_capacity(1);
+
+    let response: ApiClientPermissionResponse = ApiClientPermissionResponse {
+        status: status,
+        errors: errors,
+        limit: 0,
+        offset: 0,
+        message: Status::from_code(status).unwrap().reason().unwrap().to_string(),
+        data: data
+    };
+
+
+    return (Status::from_code(status).unwrap(), Json(response));
+}
+
+//get permissiion by id assigned to an api client by id
+#[get("/v1/client/credentials/<id>/permissions/<permission_id>", format="json")]
+async fn get_api_client_permission_by_id(id: &str, permission_id: &str, auth: Credential<CustomAuthentication>) -> (Status, Json<ApiClientPermissionResponse>) {
+    let mut status = 200;
+
+    let mut errors: Vec<ResponseError> = Vec::with_capacity(1);
+
+    let mut data: Vec<ApiClientPermission> = Vec::with_capacity(1);
+
+    let response: ApiClientPermissionResponse = ApiClientPermissionResponse {
+        status: status,
+        errors: errors,
+        limit: 0,
+        offset: 0,
+        message: Status::from_code(status).unwrap().reason().unwrap().to_string(),
+        data: data
+    };
+
 
     return (Status::from_code(status).unwrap(), Json(response));
 }
