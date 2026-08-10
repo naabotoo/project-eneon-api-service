@@ -245,6 +245,10 @@ async fn get_authentication_token(token_request: Json<TokenRequest>) -> (Status,
 async fn create_api_credential(create_api_credential_request: Json<CreateApiCredentialRequest>, auth: Credential<CustomAuthentication>) -> (Status, Json<CreateApiClientCredentialResponse>) {
     let mut status_code: u16 = 200;
 
+    let subject = &auth.subject;
+
+    tracing::info!("initiating create api client credential by: {}", subject);
+
     let generated_client_secret: api_client_service_impl::api_client_service_impl::EncryptedClientSecret = api_client_service_impl::api_client_service_impl::generate_and_encrypt_client_secret().await.unwrap();
     
     let mut errors: Vec<ResponseError> = Vec::with_capacity(1);
@@ -276,6 +280,10 @@ async fn create_api_credential(create_api_credential_request: Json<CreateApiCred
 #[delete("/v1/client/credentials/<id>", format="json")]
 async fn delete_api_client_credential(id: &str, auth: Credential<CustomAuthentication>) -> (Status, Json<CreateApiClientCredentialResponse>) {
     let mut http_status: u16 = 200;
+
+    let subject = &auth.subject;
+
+    tracing::info!("initiating delete api client credential by: {}", subject);
 
     let id_as_uuid = Uuid::from_str(id);
 
@@ -321,6 +329,10 @@ async fn delete_api_client_credential(id: &str, auth: Credential<CustomAuthentic
 async fn get_api_client_credentials(filters: FilterOptions, auth: Credential<CustomAuthentication>) -> (Status, Json<ListApiClientCredentials>) {
     let mut status = 200;
 
+    let subject = &auth.subject;
+
+    tracing::info!("initiating get api client credentials by: {}", subject);
+
     let offset: i32 = filters.offset.unwrap() as i32;
     let limit: i32 = filters.limit.unwrap() as i32;
     let search: &str = filters.search.as_str();
@@ -362,6 +374,10 @@ async fn get_api_client_credentials(filters: FilterOptions, auth: Credential<Cus
 async fn create_api_client_permission(create_api_client_permission: Json<CreateApiClientPermission>, id: &str, auth: Credential<CustomAuthentication>) -> (Status, Json<ApiClientPermissionResponse>) {
     let mut status = 200;
 
+    let subject = &auth.subject;
+
+    tracing::info!("initiating create api permission by: {} client id: {}", subject, id);
+
     let mut errors: Vec<ResponseError> = Vec::with_capacity(1);
 
     let mut data: Vec<ApiClientPermission> = Vec::with_capacity(1);
@@ -383,6 +399,10 @@ async fn create_api_client_permission(create_api_client_permission: Json<CreateA
 #[put("/v1/client/credentials/<id>/permissions/<permission_id>", format="json", data="<update_api_client_permission>")]
 async fn update_api_client_permission(update_api_client_permission: Json<UpdateApiClientPermission>, id: &str, permission_id: &str, auth: Credential<CustomAuthentication>) -> (Status, Json<ApiClientPermissionResponse>) {
     let mut status = 200;
+
+    let subject = &auth.subject;
+
+    tracing::info!("initiating update api permission by: {} client id: {}", subject, id);
 
     let mut errors: Vec<ResponseError> = Vec::with_capacity(1);
 
@@ -406,6 +426,10 @@ async fn update_api_client_permission(update_api_client_permission: Json<UpdateA
 async fn get_api_client_permission(id: &str, auth: Credential<CustomAuthentication>) -> (Status, Json<ApiClientPermissionResponse>) {
     let mut status = 200;
 
+    let subject = &auth.subject;
+
+    tracing::info!("initiating get api permissions by: {} client id: {}", subject, id);
+
     let mut errors: Vec<ResponseError> = Vec::with_capacity(1);
 
     let mut data: Vec<ApiClientPermission> = Vec::with_capacity(1);
@@ -428,6 +452,10 @@ async fn get_api_client_permission(id: &str, auth: Credential<CustomAuthenticati
 async fn delete_api_client_permission(id: &str, permission_id: &str, auth: Credential<CustomAuthentication>) -> (Status, Json<ApiClientPermissionResponse>) {
     let mut status = 200;
 
+    let subject = &auth.subject;
+
+    tracing::info!("initiating delete api permission by: {} client id: {} permission id: {}", subject, id, permission_id);
+
     let mut errors: Vec<ResponseError> = Vec::with_capacity(1);
 
     let mut data: Vec<ApiClientPermission> = Vec::with_capacity(1);
@@ -449,6 +477,10 @@ async fn delete_api_client_permission(id: &str, permission_id: &str, auth: Crede
 #[get("/v1/client/credentials/<id>/permissions/<permission_id>", format="json")]
 async fn get_api_client_permission_by_id(id: &str, permission_id: &str, auth: Credential<CustomAuthentication>) -> (Status, Json<ApiClientPermissionResponse>) {
     let mut status = 200;
+
+    let subject = &auth.subject;
+
+    tracing::info!("initiating get api credential by: {} client id: {} and id: {}", subject, id, permission_id);
 
     let mut errors: Vec<ResponseError> = Vec::with_capacity(1);
 

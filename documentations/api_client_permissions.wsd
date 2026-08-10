@@ -1,0 +1,54 @@
+@startuml "api client permissions"
+
+entity "Permission" as permissions {
+    * id: UUID <<pk>> not null
+    --
+    * key: varchar(255) <<uk>> not null
+    * created_on: timestamp DEFAULT now()
+    * updated_on: timestamp DEFAULT now()
+}
+
+entity "Role" as roles {
+    * id: UUID <<pk>>
+    --
+    * role_id: varchar(255) not null <<uk>>
+    * created_on: timestamp DEFAULT now()
+    * updated_on: timestamp DEFAULT now()
+}
+
+entity "RolePermission" as role_permissions {
+    * id: UUID <<pk>>
+    --
+    * role_id: uuid not null <<fk>>
+    * permission_id: uuid not null <<fk>>
+    * created_on: timestamp DEFAULT now()
+    * updated_on: timestamp DEFAULT now()
+}
+
+entity "ClientRole" as client_roles {
+    * id: UUID <<pk>>
+    --
+    * client_id: uuid not null <<fk>>
+    * role_id: uuid not null <<fk>>
+    * created_on: timestamp DEFAULT now()
+    * updated_on: timestamp DEFAULT now()
+}
+
+entity "ClientAllowed" as clients_allowed {
+     * id: UUID <<pk>>
+    --
+    * client_id: uuid not null <<fk>>
+    * permission_key: jsonb not null
+    * created_on: timestamp DEFAULT now()
+    * updated_on: timestamp DEFAULT now()
+}
+
+entity "ClientDenied" as clients_denied {
+     * id: UUID <<pk>>
+    --
+    * client_id: uuid not null <<fk>>
+    * permission_key: jsonb not null
+    * created_on: timestamp DEFAULT now()
+    * updated_on: timestamp DEFAULT now()
+}
+@enduml
