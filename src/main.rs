@@ -106,7 +106,7 @@ pub struct ApiClientPermissionResponse {
     pub message: String,
     pub limit: i32,
     pub offset: i32,
-    pub errors: Vec<ResponseError>,
+    errors: Vec<ResponseError>,
     pub data: Vec<ApiClientPermission>
 }
 
@@ -365,6 +365,8 @@ async fn create_api_client_permission(create_api_client_permission: Json<CreateA
     let mut errors: Vec<ResponseError> = Vec::with_capacity(1);
 
     let mut data: Vec<ApiClientPermission> = Vec::with_capacity(1);
+
+    
 
     let response: ApiClientPermissionResponse = ApiClientPermissionResponse {
         status: status,
