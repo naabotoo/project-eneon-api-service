@@ -51,4 +51,30 @@ entity "ClientDenied" as clients_denied {
     * created_on: timestamp DEFAULT now()
     * updated_on: timestamp DEFAULT now()
 }
+
+entity "Client" as client {
+    * id: UUID <<pk>>
+    --
+    * client_id: varchar(255) NOT NULL <<uk>>
+    * client_secret: varchar(500) NOT NULL
+    * is_active: bool DEFAULT false
+    * created_on: timestamp DEFAULT now()
+    * updated_on: timestamp DEFAULT now()
+ }
+
+ entity "Company" as companies {
+
+ }
+
+ entity "CompanyUser" as company_users {
+    
+ }
+
+ client }|-- clients_denied
+ client }|-- clients_allowed
+ permissions }o-- role_permissions
+ roles }o-- role_permissions
+ client --o{ client_roles
+ roles --o{ client_roles
+
 @enduml
