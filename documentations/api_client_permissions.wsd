@@ -62,14 +62,6 @@ entity "Client" as client {
     * updated_on: timestamp DEFAULT now()
  }
 
- entity "Company" as companies {
-
- }
-
- entity "CompanyUser" as company_users {
-    
- }
-
  client }|-- clients_denied
  client }|-- clients_allowed
  permissions }o-- role_permissions

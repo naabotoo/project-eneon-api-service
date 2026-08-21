@@ -4,7 +4,7 @@ use std::{ env, str::FromStr };
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier, password_hash::{ SaltString, rand_core::OsRng}};
 use chrono::{ NaiveDateTime };
 use rand::{RngExt, distr::Alphanumeric};
-use serde::{Deserialize, Serialize, de};
+use serde::{Deserialize, Serialize };
 use sqlx::{AssertSqlSafe, postgres::PgPoolOptions, prelude::FromRow};
 use dotenvy::dotenv;
 use uuid::Uuid;
@@ -413,7 +413,7 @@ use uuid::Uuid;
 
         match db_connection {
             Ok(pool) => {
-                let check_query = format!("SELECT is_client_allowed({client_id});");
+                let check_query = format!("SELECT is_client_allowed('{client_id}') AS is_allowed;");
 
                 let result = sqlx::query_as::<_, RecordIsClientValid>(sqlx::AssertSqlSafe(check_query))
                 .bind(client_id)
@@ -425,6 +425,7 @@ use uuid::Uuid;
                         return Ok(r.is_allowed)
                     },
                     Err(e) => {
+                        println!("error occurred : {}", e);
                         return Err(IsClientValidError { 
                             error_code: 500.to_string(), 
                             error_message: e.to_string() 

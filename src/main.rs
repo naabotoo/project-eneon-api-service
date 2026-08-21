@@ -1,3 +1,4 @@
+use std::f32::consts::E;
 use std::{str::FromStr};
 
 use chrono::{DateTime, TimeZone, Utc};
@@ -16,6 +17,7 @@ use crate::api_client_service_impl::api_client_service_impl::{ApiClientCredentia
 mod jwt_service_impl;
 mod api_client_service_impl;
 mod geospatial_computations;
+mod categories_service_impl;
 
 #[macro_use] extern crate rocket;
 
@@ -83,6 +85,7 @@ struct ListApiClientCredentials {
     pub message: String,
     pub limit: i32,
     pub offset: i32,
+    pub total_count: i32,
     pub errors: Vec<ResponseError>,
     pub data: Vec<ApiClientCredential>
 }
@@ -130,6 +133,32 @@ pub struct UpdateApiClientPermission {
 
 }
 
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+struct ProductCategoriesResponse {
+    status: u16,
+    message: String,
+    limit: i32,
+    offset: i32,
+    total_count: i32,
+    errors: Vec<ResponseError>,
+    data: Vec<ProductCategory>
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+struct ProductCategory {
+    id: String,
+    company_id: String, 
+    name: String,
+    description: String,
+    parent_category_id: String,
+    created_at: String,
+    modified_at: String,
+    is_active: bool  
+}
+
 #[rocket::async_trait]
 impl Authorization for CustomAuthentication {
     const KIND: &'static str = "Bearer";
@@ -159,13 +188,21 @@ impl Authorization for CustomAuthentication {
                     return Err(AuthError::Forbidden);
                 } else {
                     //check if api client is enabled on the platform
-                    let is_allowed: bool = api_client_service_impl::api_client_service_impl::is_allowed(claims.sub.as_str()).await.unwrap();
+                    let is_allowed: Result<bool, api_client_service_impl::api_client_service_impl::IsClientValidError> = api_client_service_impl::api_client_service_impl::is_allowed(claims.sub.as_str()).await;
 
-                    if is_allowed {
-                        println!("audience presented in token : {} and subject : {} expires: {} issued_on: {}", claims.aud, claims.sub, expires_in, issued_on);
-                        return Ok(CustomAuthentication { subject: claims.sub })
-                    } else {
-                        return Err(AuthError::Forbidden);
+                    match is_allowed {
+                        Ok(resp) => {
+                            if resp == true {
+                                tracing::info!("audience presented in token : {} and subject : {} expires: {} issued_on: {}", claims.aud, claims.sub, expires_in, issued_on);
+                                return Ok(CustomAuthentication { subject: claims.sub })
+                            } else {
+                                return Err(AuthError::Forbidden);
+                            }
+                        },
+                        Err(e) => {
+                            tracing::warn!("error occured while decoding token, message : {}", e.error_message);
+                            return Err(AuthError::Unauthorized);
+                        }
                     }
                 }
             },
@@ -363,6 +400,7 @@ async fn get_api_client_credentials(filters: FilterOptions, auth: Credential<Cus
         message: Status::from_code(status).unwrap().reason().unwrap().to_string(),
         limit: filters.limit.unwrap() as i32,
         offset: filters.offset.unwrap() as i32,
+        total_count: 0,
         data: data
     };
 
@@ -501,6 +539,66 @@ async fn get_api_client_permission_by_id(id: &str, permission_id: &str, auth: Cr
     return (Status::from_code(status).unwrap(), Json(response));
 }
 
+
+//get product categories by company_id
+#[get("/v1/company/<company_id>/product/categories", format="json")]
+async fn get_product_categories_by_company_id(company_id: &str, auth: Credential<CustomAuthentication>) -> (Status, Json<ProductCategoriesResponse>) {
+    let mut status = 200;
+
+    let subject = &auth.subject;
+
+    tracing::info!("initiating get product categories by company _id: {}", company_id);
+
+    let mut errors: Vec<ResponseError> = Vec::with_capacity(1);
+
+    let company_uuid = Uuid::from_str(company_id);
+
+    let mut data: Vec<ProductCategory> = Vec::new();
+
+    match company_uuid {
+        Ok(_id) => {
+            let is_active: bool = true;
+
+            let categories_result = categories_service_impl::categories_service_impl::get_categories_by_company_id(&_id, &is_active).await;
+
+            match categories_result {
+                Ok(categories) => {
+                    for category in categories {
+                        data.push(ProductCategory {
+                            company_id: category.company_id.to_string(),
+                            created_at: category.created_at.to_string(),
+                            id: category.id.to_string(),
+                            name: category.name,
+                            description: category.description,
+                            parent_category_id: "".to_string(),
+                            modified_at: category.modified_at.to_string(),
+                            is_active: category.is_active
+                        })
+                    }
+                },
+                Err(e) => {
+                    errors.push(ResponseError { error_code: e.error_code.to_string(), error_message: e.error_message });
+                }
+            }
+        },
+        Err(e) => {
+            errors.push(ResponseError{ error_code: 400.to_string(), error_message: e.to_string()});
+        }
+    }
+
+    let response: ProductCategoriesResponse = ProductCategoriesResponse {
+        status: status,
+        errors: errors,
+        limit: 0,
+        offset: 0,
+        total_count: 0,
+        message: Status::from_code(status).unwrap().reason().unwrap().to_string(),
+        data: data
+    };
+
+
+    return (Status::from_code(status).unwrap(), Json(response));
+}
 #[catch(404)]
 fn not_found(request: &Request) -> Json<CatchResponse> {
 
@@ -587,6 +685,7 @@ fn rocket() -> _ {
         get_authentication_token, 
         create_api_credential, 
         delete_api_client_credential, 
-        get_api_client_credentials
+        get_api_client_credentials,
+        get_product_categories_by_company_id
     ])
 }
