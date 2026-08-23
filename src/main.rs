@@ -1,4 +1,3 @@
-use std::f32::consts::E;
 use std::{str::FromStr};
 
 use chrono::{DateTime, TimeZone, Utc};
@@ -207,7 +206,7 @@ impl Authorization for CustomAuthentication {
                 }
             },
             Err(err) => {
-                tracing::warn!("error occured while decoding token, message : {}", err.error_message);
+                tracing::warn!("error occured while decoding token, uri: {} message : {}", uri, err.error_message);
                 return Err(AuthError::Unauthorized);
             }
         };
@@ -657,6 +656,21 @@ fn bad_request(request: &Request) -> Json<CatchResponse> {
     return Json(CatchResponse { status: 400, message: message.unwrap(), errors: errors, data: Vec::new() })
 }
 
+
+#[catch(422)]
+fn unprocessable_entity(request: &Request) -> Json<CatchResponse> {
+
+    let error = ResponseError {
+        error_code: 422.to_string(),
+        error_message: format!("Unprocessable Entity. uri: {}", request.uri())
+    };
+
+    let errors = vec![error];
+    let message = String::from_str(Status::from_code(422).unwrap().reason().unwrap());
+
+    return Json(CatchResponse { status: 400, message: message.unwrap(), errors: errors, data: Vec::new() })
+}
+
 #[launch]
 fn rocket() -> _ {
 
@@ -679,7 +693,7 @@ fn rocket() -> _ {
     .init();
 
     rocket::build()
-    .register("/", catchers![not_found, internal_server_error, unauthorized, bad_request])
+    .register("/", catchers![not_found, internal_server_error, unauthorized, bad_request, unprocessable_entity])
     .mount("/", routes![
         index, 
         get_authentication_token, 

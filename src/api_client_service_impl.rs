@@ -373,6 +373,8 @@ use uuid::Uuid;
             Ok(secret) => {
                 let secret_value = secret.client_secret;
 
+                tracing::info!("api client generate secret: {}", secret_value);
+
                 let encrypted_value = encrypt_client_secret(&secret_value).await;
 
                 match encrypted_value {
@@ -425,7 +427,7 @@ use uuid::Uuid;
                         return Ok(r.is_allowed)
                     },
                     Err(e) => {
-                        println!("error occurred : {}", e);
+                        tracing::warn!("error occurred while checking client is allowed. message : {}", e);
                         return Err(IsClientValidError { 
                             error_code: 500.to_string(), 
                             error_message: e.to_string() 
@@ -434,6 +436,7 @@ use uuid::Uuid;
                 }
             },
             Err(err) => {
+                tracing::warn!("error occurred db connection while checking client is allowed. message : {}", err);
                 return Err(IsClientValidError { 
                     error_code: "500".to_string(), 
                     error_message: err.to_string() 
