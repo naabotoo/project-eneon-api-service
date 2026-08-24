@@ -56,6 +56,40 @@ pub mod categories_service_impl {
         }
     }
 
+    //get category by id
+    pub async fn get_category_by_id(company_id: &Uuid, is_active: &bool) -> Result<Vec<RecordProductCategory>, ProductServiceError> {
+        tracing::info!("get product categories by id: {}", company_id);
+
+        let db_connection = get_db_connection().await;
+
+
+        match db_connection {
+            Ok(pool) => {
+
+                let statement = format!("SELECT * FROM get_company_by_id_and_status('{}', {});", company_id, is_active);
+                
+                let result = sqlx::query_as::<_, RecordProductCategory>(AssertSqlSafe(statement))
+                .bind(&company_id)
+                .bind(&is_active)
+                .fetch_all(&pool)
+                .await;
+
+                match result {
+                    Ok(res) => {
+                        return Ok(res);
+                    },
+                    Err(e) => {
+                        tracing::warn!("error while getting product category by company id from db. message {}", e);
+                        return Err(ProductServiceError { error_code: 500, error_message: e.to_string() });
+                    }
+                }
+            },
+            Err(e) => {
+                tracing::warn!("error while connecting to db for product categories by company id. message {}", e);
+                return Err(ProductServiceError { error_code: 500, error_message: e.to_string() });
+            }
+        }
+    }
 
     async fn get_db_connection() -> Result<sqlx::PgPool, sqlx::Error> {
         dotenv().ok();
