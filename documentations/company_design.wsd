@@ -1,0 +1,24 @@
+@startuml "company entity design"
+    entity companies as "Company" {
+        id: UUID <<pk>>
+        brand_name: varchar(255)
+        legal_name: varchar(255)
+        owner_id: UUID <<fk>>
+        is_enabled: boolean
+        operates_in: UUID <<fk>>
+        created_on: Timestamp DEFAULT now()
+        updated_on: Timestamp DEFAULT now()
+    }
+
+    entity company_members as "CompanyMember" {
+        id: UUID <<pk>>
+        first_name: varchar(100)
+        last_name: varchar(100)
+        email: varchar(100)
+        msisdn: varchar(10)
+        has_mfa_enabled: boolean
+        is_active: boolean
+        created_on: Timestamp DEFAULT now()
+        updated_on: Timestamp DEFAULT now()
+    }
+@enduml

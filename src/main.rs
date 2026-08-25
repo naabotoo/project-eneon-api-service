@@ -17,6 +17,7 @@ mod jwt_service_impl;
 mod api_client_service_impl;
 mod geospatial_computations;
 mod categories_service_impl;
+mod company_service_impl;
 
 #[macro_use] extern crate rocket;
 

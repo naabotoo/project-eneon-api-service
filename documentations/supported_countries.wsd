@@ -1,32 +1,48 @@
 @startuml supported_countries
-    entity "SupportedCountry" as supported_countries {
-        * id: UUID
-        * name: VARCHAR
-        * iso_code: VARCHAR
-        * is_enabled: Boolean
-        * created_on: DateTime
-        * updated_on: DateTime
+    entity supported_countries as "SupportedCountry"  {
+        * id: UUID <<pk>>
+        * name: VARCHAR NOT NULL
+        * iso_code: VARCHAR NOT NULL
+        * is_enabled: Boolean DEFAULT true
+        * created_on: Timestamp DEFAULT now()
+        * updated_on: Timestamp DEFAULT now()
     }
 
-    entity "SupportedLanguage" as supported_languages {
-        * id: UUID
-        * label: VARCHAR
-        * iso_code: VARCHAR
-        * created_on: DateTime
-        * updated_on: DateTime
+    entity supported_languages as "SupportedLanguage"  {
+        * id: UUID <<pk>>
+        * label: VARCHAR NOT NULL
+        * iso_code: VARCHAR NOT NULL
+        * created_on: Timestamp DEFAULT now()
+        * updated_on: Timestamp DEFAULT now()
     }
 
-    entity "SupportedCountryLanguage" as supported_country_language {
-        * id: UUID
-        * country_id: UUID
-        * language_id: UUID
+    entity supported_currencies as "SupportedCurrency" {
+        * id: UUID <<pk>>
+        * label: VARCHAR NOT NULL
+        * iso_code: VARCHAR NOT NULL
+        * created_on: Timestamp DEFAULT now()
+        * updated_on: Timestamp DEFAULT now()
     }
 
-    entity "ApiClientCredentialPermission" as api_client_credential_permissions {
+    entity supported_country_language as "SupportedCountryLanguage"  {
+        * id: UUID <<pk>>
+        * country_id: UUID <<fk>> NOT NULL
+        * language_id: UUID <<fk>> NOT NULL
+        * created_on: Timestamp DEFAULT now()
+        * updated_on: Timestamp DEFAULT now()
+    }
 
+    entity supported_country_currencies as "SupportedCountryCurrency"  {
+        * id: UUID <<pk>>
+        * country_id: UUID <<fk>> NOT NULL
+        * currency_id: UUID <<fk>> NOT NULL
+        * created_on: Timestamp DEFAULT now()
+        * updated_on: Timestamp DEFAULT now()
     }
 
     supported_country_language }|-- supported_countries
-    supported_country_language }|-- supported_languages
+    supported_country_currencies }|-- supported_countries
+    supported_languages }|-- supported_country_language
+    supported_country_currencies }|-- supported_currencies
 
 @enduml
