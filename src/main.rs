@@ -18,6 +18,7 @@ mod api_client_service_impl;
 mod geospatial_computations;
 mod categories_service_impl;
 mod company_service_impl;
+mod sign_up_service_impl;
 
 #[macro_use] extern crate rocket;
 
@@ -157,6 +158,36 @@ struct ProductCategory {
     created_at: String,
     modified_at: String,
     is_active: bool  
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+struct SignUpResponse {
+    pub status: u16,
+    pub message: String,
+    pub total_count: i32,
+    pub errors: Vec<ResponseError>,
+    pub data: Vec<SignUpResponseData>
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+struct SignUpRequest {
+    pub status: u16,
+    pub message: String,
+    pub total_count: i32,
+    pub errors: Vec<ResponseError>,
+    pub data: Vec<SignUpResponseData>
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+struct SignUpResponseData {
+    email: Option<String>,
+    msisdn: String,
+    name: Option<String>,
+    created_on: String,
+    updated_on: String
 }
 
 #[rocket::async_trait]
@@ -599,6 +630,25 @@ async fn get_product_categories_by_company_id(company_id: &str, auth: Credential
 
     return (Status::from_code(status).unwrap(), Json(response));
 }
+
+
+
+#[post("/v1/register", format="json", data="<sign_up_request>")]
+async fn sign_up(sign_up_request: Json<SignUpRequest>) -> (Status, Json<SignUpResponse>) {
+    let mut status_code: u16 = 200;
+
+    let response: SignUpResponse = SignUpResponse { 
+        errors: Vec::new(),
+        data: Vec::new(),
+        message: "".to_string(),
+        total_count: 0,
+        status: status_code
+     };
+
+    return (Status::from_code(status_code).unwrap(), Json(response));
+}
+
+
 #[catch(404)]
 fn not_found(request: &Request) -> Json<CatchResponse> {
 
@@ -701,6 +751,7 @@ fn rocket() -> _ {
         create_api_credential, 
         delete_api_client_credential, 
         get_api_client_credentials,
-        get_product_categories_by_company_id
+        get_product_categories_by_company_id,
+        sign_up
     ])
 }
