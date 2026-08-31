@@ -1,0 +1,13 @@
+@startuml "sign up process"
+    entity sign_up_request as "SignUpRequest" {
+        id: UUID <<pk>>
+        msisdn: String
+        email: String
+        country_id: UUID <<fk>>
+        client_id: UUID <<fk>>
+        is_confirmed: Boolean
+        is_expired: Boolean
+        created_on: Timestamp
+        updated_on: Timestamp
+    }
+@enduml

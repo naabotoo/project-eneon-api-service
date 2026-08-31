@@ -165,7 +165,6 @@ struct ProductCategory {
 struct SignUpResponse {
     pub status: u16,
     pub message: String,
-    pub total_count: i32,
     pub errors: Vec<ResponseError>,
     pub data: Vec<SignUpResponseData>
 }
@@ -173,11 +172,8 @@ struct SignUpResponse {
 #[derive(Serialize, Deserialize)]
 #[serde(crate = "rocket::serde")]
 struct SignUpRequest {
-    pub status: u16,
-    pub message: String,
-    pub total_count: i32,
-    pub errors: Vec<ResponseError>,
-    pub data: Vec<SignUpResponseData>
+    pub msisdn: String,
+    pub email: Option<String>
 }
 
 #[derive(Serialize, Deserialize)]
@@ -636,12 +632,30 @@ async fn get_product_categories_by_company_id(company_id: &str, auth: Credential
 #[post("/v1/register", format="json", data="<sign_up_request>")]
 async fn sign_up(sign_up_request: Json<SignUpRequest>) -> (Status, Json<SignUpResponse>) {
     let mut status_code: u16 = 200;
+    let mut errors: Vec<ResponseError> = Vec::with_capacity(1);
+
+    tracing::info!("initiating sign up request for msisdn: {}", sign_up_request.msisdn);
+
+    let is_valid_msisdn: bool = sign_up_service_impl::sign_up_service_impl::is_valid_msisdn(&sign_up_request.msisdn);
+
+    tracing::info!("is valid msisdn valid E.164: {}", is_valid_msisdn);
+
+    if is_valid_msisdn {
+        //create a sign up request object in db
+        
+
+        //send otp to msisdn via email or sms
+
+    } else {
+        status_code = 400;
+        let error: ResponseError = ResponseError { error_code: 400.to_string(), error_message: "invalid msisdn passed.".to_string() };
+        errors.push(error);
+    }
 
     let response: SignUpResponse = SignUpResponse { 
-        errors: Vec::new(),
+        errors: errors,
         data: Vec::new(),
         message: "".to_string(),
-        total_count: 0,
         status: status_code
      };
 
