@@ -21,4 +21,17 @@
         created_on: Timestamp DEFAULT now()
         updated_on: Timestamp DEFAULT now()
     }
+
+    entity company_member_allocation as "CompanyMemberAllocation" {
+        id: UUID <<pk>>
+        company_member_id: 
+    }
+
+    entity company_geolocation_areas as "CompanyGeolocationArea" {
+
+    }
+
+    enity  {
+
+    }
 @enduml
