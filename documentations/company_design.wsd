@@ -22,16 +22,31 @@
         updated_on: Timestamp DEFAULT now()
     }
 
-    entity company_member_allocation as "CompanyMemberAllocation" {
+    entity company_member_allocations as "CompanyMemberAllocation" {
         id: UUID <<pk>>
-        company_member_id: 
+        company_member_id: UUID <<fk>>
+        created_on: Timestamp DEFAULT now()
+        updated_on: Timestamp DEFAULT now()
+    }
+
+    entity company_member_allocations as "CompanyMemberAllocation" {
+        id: UUID <<pk>>
+        company_member_id: UUID <<fk>>
+        created_on: Timestamp DEFAULT now()
+        updated_on: Timestamp DEFAULT now()
     }
 
     entity company_geolocation_areas as "CompanyGeolocationArea" {
-
+        id: UUID <<pk>>
+        country_id: UUID <<fk>>
+        label: VARCHAR(255) NOT NULL
+        description: TEXT NULL
+        is_active: boolean
+        created_on: Timestamp DEFAULT now()
+        updated_on: Timestamp DEFAULT now()
     }
 
-    enity  {
-
+    entity company_geolocation_area_polygons as "CompanyGeolocationAreaPolygons" {
+        
     }
 @enduml
