@@ -39,7 +39,9 @@
     entity company_geolocation_areas as "CompanyGeolocationArea" {
         id: UUID <<pk>>
         country_id: UUID <<fk>>
+        company_id: UUID <<fk>>
         label: VARCHAR(255) NOT NULL
+        code: VARCHAR(10) NOT NULL <<uk>>
         description: TEXT NULL
         is_active: boolean
         created_on: Timestamp DEFAULT now()
@@ -47,6 +49,15 @@
     }
 
     entity company_geolocation_area_polygons as "CompanyGeolocationAreaPolygons" {
-        
+        id: UUID <<pk>>
+        area_id: UUID <<fk>>
+        idx: int NOT NULL
+        latitude: VARCHAR(10) NOT NULL
+        longitude: VARCHAR(10) NOT NULL
+        created_on: Timestamp DEFAULT now()
+        updated_on: Timestamp DEFAULT now()
     }
+
+    company_geolocation_areas ||--o{ company_geolocation_area_polygons : "company_geolocation_area_polygons"
+    companies ||--o{ company_members : "company_members"
 @enduml
