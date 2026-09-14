@@ -6,7 +6,9 @@ pub mod copmany_service_impl {
     use dotenvy::dotenv;
     use serde::{Deserialize, Serialize};
     use sqlx::{postgres::PgPoolOptions, prelude::FromRow};
-    use uuid::Uuid;
+use uuid::Uuid;
+
+use crate::AddCompanyDTO;
 
     #[derive(Debug, FromRow)]
     struct RecordCompany {
@@ -48,7 +50,58 @@ pub mod copmany_service_impl {
         pub data: Vec<CompanyDTO>,
         pub total_count: usize
     }
+
     //create company
+    pub async fn create(add_company_request: AddCompanyDTO, subject: &String) -> Result<CompanyDTO, CompanyDTOError>{
+        let db_connection = get_db_connection().await;
+
+        match db_connection {
+            Ok(conn) => {
+                let id: Uuid = Uuid::new_v4();
+
+                let statment = format!("INSERT into companies(id, name, email, is_enabled, operates_in) values($1, $2, $3, $4, $5)");
+
+                let result = sqlx::query_as::<_, RecordCompany>(sqlx::AssertSqlSafe(statment))
+                .bind(id)
+                .bind(add_company_request.name)
+                .bind(add_company_request.email)
+                .bind(add_company_request.is_enabled)
+                .bind(add_company_request.operates_in)
+                .fetch_one(&conn).await;
+
+                match result {
+                    Ok(res) => {
+                        return Ok(CompanyDTO { 
+                            id: res.id.to_string(), 
+                            name: res.name, 
+                            email: res.email, 
+                            subscription_tier: res.subscription_tier, 
+                            max_products: res.max_products as usize, 
+                            max_categories: res.max_categories as usize, 
+                            is_enabled: res.is_enabled, 
+                            operates_in: res.operates_in.to_string(), 
+                            created_at: res.created_at.to_string(), 
+                            updated_at: res.updated_at.to_string()
+                        });
+                    },
+                    Err(err)=> {
+                        tracing::warn!("error occurred while inserting create company by subject: {}. message: {}", subject, err.to_string());
+                        return Err(CompanyDTOError {
+                            error_code: 500.to_string(),
+                            error_message: err.to_string(),
+                        });
+                    }
+                }
+            },
+            Err(err) => {
+                tracing::warn!("error occurred while getting db connection for create company subject: {}. message: {}", subject, err.to_string());
+                return Err(CompanyDTOError {
+                    error_code: 500.to_string(),
+                    error_message: err.to_string(),
+                });
+            }
+        }
+    }
 
     //get company by id
     pub async fn get_by_id(id: &Uuid) -> Result<CompanyDTO, CompanyDTOError> {

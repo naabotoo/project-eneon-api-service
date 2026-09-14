@@ -197,6 +197,16 @@ struct CompanyResponse {
     data: Vec<CompanyDTO>,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+pub struct AddCompanyDTO {
+    pub id: String,
+    pub name: String, 
+    pub email: String,
+    pub is_enabled: bool, 
+    pub operates_in: String
+}
+
 #[rocket::async_trait]
 impl Authorization for CustomAuthentication {
     const KIND: &'static str = "Bearer";
@@ -832,6 +842,38 @@ async fn sign_up(sign_up_request: Json<SignUpRequest>) -> (Status, Json<SignUpRe
 }
 
 //create a company
+#[post("/v1/companies", format="json", data="<add_company_request>")]
+async fn create_company(add_company_request: Json<AddCompanyDTO>, auth: Credential<CustomAuthentication>) -> (Status, Json<CompanyResponse>) {
+    let mut status_code: u16 = 200;
+    let mut total_count: i32 = 0;
+    let mut errors: Vec<ResponseError> = Vec::new();
+    let mut data: Vec<CompanyDTO> = Vec::new();
+
+    let create_company_result = company_service_impl::copmany_service_impl::create(add_company_request.0, &auth.subject).await;
+
+    match create_company_result {
+        Ok(res) => {
+            data.push(res);
+            total_count = 1;
+        }, 
+        Err(e) => {
+            tracing::warn!("error occurred while creating company. message: {}", e.error_message);
+            status_code = 400;
+            errors.push(ResponseError { error_code: e.error_code, error_message: e.error_message });
+        }
+    }
+
+    let response = CompanyResponse { 
+        status: status_code, 
+        message: Status::from_code(status_code).unwrap().reason().unwrap().to_string(), 
+        limit: 0, 
+        offset: 0, 
+        total_count: total_count, 
+        errors: errors, 
+        data: data };
+
+    return (Status::from_code(status_code).unwrap(), Json(response));
+}
 
 //get a list of companies
 #[get("/v1/companies?<pagination..>", format = "json")]
@@ -1108,7 +1150,8 @@ fn rocket() -> _ {
                 get_product_categories_by_company_id,
                 sign_up,
                 get_company_by_id,
-                get_companies
+                get_companies,
+                create_company
             ],
         )
 }
