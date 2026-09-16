@@ -12,7 +12,7 @@ use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use uuid::Uuid;
 
 use crate::api_client_service_impl::api_client_service_impl::ApiClientCredential;
-use crate::company_service_impl::copmany_service_impl::{CompanyDTO, CompanyDTOError};
+use crate::company_service_impl::copmany_service_impl::{CompanyDTO};
 
 mod api_client_service_impl;
 mod categories_service_impl;
@@ -20,6 +20,7 @@ mod company_service_impl;
 mod geospatial_computations;
 mod jwt_service_impl;
 mod sign_up_service_impl;
+mod geofencing_services_impl;
 
 #[macro_use]
 extern crate rocket;
@@ -207,6 +208,11 @@ pub struct AddCompanyDTO {
     pub operates_in: String
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+pub struct WithinFenceResponse {
+
+}
 #[rocket::async_trait]
 impl Authorization for CustomAuthentication {
     const KIND: &'static str = "Bearer";
@@ -1017,6 +1023,14 @@ async fn get_company_by_id(
 //assign a company member to a geofence area
 
 //check if a current location is within an assigned geofence
+#[get("/v1/geofencing/check", format="json")]
+pub async fn is_within_fence() -> (Status, Json<WithinFenceResponse>) {
+    let mut status_code = 200;
+
+    let response = WithinFenceResponse {};
+
+    return (Status::from_code(status_code).unwrap(), Json(response));
+}
 
 #[catch(404)]
 fn not_found(request: &Request) -> Json<CatchResponse> {

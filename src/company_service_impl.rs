@@ -6,9 +6,9 @@ pub mod copmany_service_impl {
     use dotenvy::dotenv;
     use serde::{Deserialize, Serialize};
     use sqlx::{postgres::PgPoolOptions, prelude::FromRow};
-use uuid::Uuid;
-
-use crate::AddCompanyDTO;
+    use uuid::Uuid;
+    
+    use crate::AddCompanyDTO;
 
     #[derive(Debug, FromRow)]
     struct RecordCompany {
