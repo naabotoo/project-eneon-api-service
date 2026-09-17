@@ -211,8 +211,28 @@ pub struct AddCompanyDTO {
 #[derive(Serialize, Deserialize)]
 #[serde(crate = "rocket::serde")]
 pub struct WithinFenceResponse {
+    status: u16,
+    message: String,
+    limit: i32,
+    offset: i32,
+    total_count: i32,
+    errors: Vec<ResponseError>,
+    data: Vec<WithinFenceResult>,   
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+pub struct WithinFenceResult {
 
 }
+
+#[derive(FromForm)]
+pub struct WithinFenceRequestFilter {
+    pub lat: f32,
+    pub lng: f32,
+    pub elevation: f32
+}
+
 #[rocket::async_trait]
 impl Authorization for CustomAuthentication {
     const KIND: &'static str = "Bearer";
@@ -1023,11 +1043,15 @@ async fn get_company_by_id(
 //assign a company member to a geofence area
 
 //check if a current location is within an assigned geofence
-#[get("/v1/geofencing/check", format="json")]
-pub async fn is_within_fence() -> (Status, Json<WithinFenceResponse>) {
+#[get("/v1/geofencing/check?<current_location..>", format="json")]
+pub async fn is_within_fence(current_location: WithinFenceRequestFilter, auth: Credential<CustomAuthentication>) -> (Status, Json<WithinFenceResponse>) {
+    tracing::info!("is within fence request: lat: {} lng : {}", current_location.lat, current_location.lng);
+
     let mut status_code = 200;
 
     let response = WithinFenceResponse {};
+
+    tracing::info!("done checking within fence request using lat: {} lng: {}", current_location.lat, current_location.lng);
 
     return (Status::from_code(status_code).unwrap(), Json(response));
 }
@@ -1165,7 +1189,8 @@ fn rocket() -> _ {
                 sign_up,
                 get_company_by_id,
                 get_companies,
-                create_company
+                create_company,
+                is_within_fence
             ],
         )
 }
