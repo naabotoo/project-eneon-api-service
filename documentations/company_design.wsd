@@ -58,6 +58,16 @@
         updated_on: Timestamp DEFAULT now()
     }
 
+    entity company_member_assigned_areas as "CompanyMemberAssignedAreas" {
+        id: UUID <<pk>>
+        company_member_id: UUID <<fk>>
+        area_id: UUID <<fk>>
+        is_active: boolean DEFAULT true
+        created_on: Timestamp DEFAULT now()
+        updated_on: Timestamp DEFAULT now()
+    }
+
     company_geolocation_areas ||--o{ company_geolocation_area_polygons : "company_geolocation_area_polygons"
     companies ||--o{ company_members : "company_members"
+    company_members ||--o{ company_member_assigned_areas
 @enduml

@@ -230,7 +230,8 @@ pub struct WithinFenceResult {
 pub struct WithinFenceRequestFilter {
     pub lat: f32,
     pub lng: f32,
-    pub elevation: f32
+    pub elevation: Option<f32>,
+    pub company_member_id: String
 }
 
 #[rocket::async_trait]
@@ -1048,10 +1049,49 @@ pub async fn is_within_fence(current_location: WithinFenceRequestFilter, auth: C
     tracing::info!("is within fence request: lat: {} lng : {}", current_location.lat, current_location.lng);
 
     let mut status_code = 200;
+    let mut data: Vec<WithinFenceResult> = Vec::new();
+    let mut errors: Vec<ResponseError> = Vec::new();
 
-    let response = WithinFenceResponse {};
+    let subject: String = auth.subject.to_string();
 
-    tracing::info!("done checking within fence request using lat: {} lng: {}", current_location.lat, current_location.lng);
+    let lat = current_location.lat;
+    let lng = current_location.lng;
+
+    let member_id = Uuid::from_str(&current_location.company_member_id);
+
+    match member_id {
+        Ok(id) => {
+            let result = geofencing_services_impl::geofencing_services_impl::is_within_fence(&subject, current_location).await;
+
+            match result {
+                Ok(res) => {
+                    data.push(res);
+                },
+                Err(err) => {
+                    status_code = err.error_code.parse().unwrap();
+                    tracing::warn!("error occurred while verifying current location is within fence. error code: {} and error message: {}", err.error_code, err.error_message);
+                    errors.push(ResponseError { error_code: err.error_code, error_message: err.error_message });
+                }
+            }
+        },
+        Err(err) => {
+            status_code = 400;
+            tracing::warn!("error occurred while converting company_member_id as uuid. message: {}", err);
+            errors.push(ResponseError { error_code: 400.to_string(), error_message: err.to_string()});
+        }
+    }
+
+    let response = WithinFenceResponse {
+        status: status_code,
+        message: Status::from_code(status_code).unwrap().reason().unwrap().to_string(),
+        total_count: 0,
+        limit: 0,
+        offset: 0,
+        data: data,
+        errors: errors
+    };
+
+    tracing::info!("done checking within fence request using lat: {} lng: {}", lat, lng);
 
     return (Status::from_code(status_code).unwrap(), Json(response));
 }

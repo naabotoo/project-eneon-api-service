@@ -24,6 +24,20 @@ pub mod copmany_service_impl {
         updated_at: NaiveDateTime,
     }
 
+    #[derive(Debug, FromRow)]
+    struct RecordCompanyMember {
+        id: Uuid,
+        company_id: Uuid,
+        email: String,
+        msisdn: String,
+        first_name: String,
+        last_name: String,
+        is_active: bool,
+        has_mfa_enabled: bool,
+        created_on: NaiveDateTime,
+        updated_on: NaiveDateTime,
+    }
+
     #[derive(Serialize, Deserialize)]
     #[serde(crate = "rocket::serde")]
     pub struct CompanyDTO {
@@ -41,7 +55,36 @@ pub mod copmany_service_impl {
 
     #[derive(Serialize, Deserialize)]
     #[serde(crate = "rocket::serde")]
+    pub struct CompanySummaryDTO {
+        pub id: String,
+        pub name: String
+    }
+
+    #[derive(Serialize, Deserialize)]
+    #[serde(crate = "rocket::serde")]
+    pub struct CompanyMemberDTO {
+        pub id: String,
+        pub company: CompanySummaryDTO,
+        pub email: String,
+        pub msisdn: String,
+        pub first_name: String,
+        pub last_name: String,
+        pub is_active: bool,
+        has_mfa_enabled: bool,
+        pub created_at: String,
+        pub updated_at: String
+    }
+
+    #[derive(Serialize, Deserialize)]
+    #[serde(crate = "rocket::serde")]
     pub struct CompanyDTOError {
+        pub error_code: String,
+        pub error_message: String,
+    }
+
+    #[derive(Serialize, Deserialize)]
+    #[serde(crate = "rocket::serde")]
+    pub struct CompanyMemberError {
         pub error_code: String,
         pub error_message: String,
     }
@@ -235,6 +278,64 @@ pub mod copmany_service_impl {
     //delete an existing company by id
 
     //patch company is enabled status
+
+    //get company member by id
+    pub async fn find_company_member_by_id(company_member_id: Uuid) -> Result<CompanyMemberDTO, CompanyMemberError> {
+        let db_connection = get_db_connection().await;
+
+        match db_connection {
+            Ok(conn) => {
+                let statement = format!(
+                    "SELECT cm.id,
+                        cm.company_id as company_id,
+                        cm.email,
+                        cm.msisdn,
+                        cm.first_name,
+                        cm.last_name,
+                        cm.is_active,
+                        cm.has_mfa_enabled,
+                        cm.created_on,
+                        cm.updated_on FROM company_members AS cm WHERE cm.id = '{company_member_id}'"
+                );
+
+                let result = sqlx::query_as::<_, RecordCompanyMember>(sqlx::AssertSqlSafe(statement))
+                    .bind(company_member_id)
+                    .fetch_one(&conn)
+                    .await;
+
+                match result {
+                    Ok(res) => {
+                        return Ok(CompanyMemberDTO { 
+                            id: res.id.to_string(),
+                            company: CompanySummaryDTO { id: res.company_id.to_string(), name: "".to_string() },
+                            email: res.email,
+                            msisdn: res.msisdn,
+                            first_name: res.first_name,
+                            last_name: res.last_name,
+                            is_active: res.is_active,
+                            has_mfa_enabled: res.has_mfa_enabled,
+                            created_at: res.created_on.to_string(),
+                            updated_at: res.updated_on.to_string()
+                        });
+                    },
+                    Err(err) => {
+                        tracing::warn!("error occurred while getting company member by id: {} with company member id. message: {}", company_member_id, err.to_string());
+                        return Err(CompanyMemberError {
+                            error_code: 500.to_string(),
+                            error_message: err.to_string(),
+                        });
+                    }
+                }
+            },
+            Err(err) => {
+                tracing::warn!("error occurred while getting db connection for company member by id: {} with id. message: {}", company_member_id, err.to_string());
+                return Err(CompanyMemberError {
+                    error_code: 500.to_string(),
+                    error_message: err.to_string(),
+                });
+            }
+        }
+    }
 
     async fn get_db_connection() -> Result<sqlx::PgPool, sqlx::Error> {
         dotenv().ok();
