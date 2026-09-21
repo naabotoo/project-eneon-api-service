@@ -94,6 +94,26 @@ pub mod copmany_service_impl {
         pub total_count: usize
     }
 
+    #[derive(Serialize, Deserialize)]
+    #[serde(crate = "rocket::serde")]
+    pub struct CompanyMemberAssignedAreaDTO {
+        
+    }
+
+    #[derive(Serialize, Deserialize)]
+    #[serde(crate = "rocket::serde")]
+    pub struct CompanyMemberAssignedAreaError {
+        pub error_code: String,
+        pub error_message: String
+    }
+
+    #[derive(Debug, FromRow)]
+    struct RecordCompanyMemberAssignedArea {
+        
+        created_on: NaiveDateTime,
+        updated_on: NaiveDateTime,
+    }
+
     //create company
     pub async fn create(add_company_request: AddCompanyDTO, subject: &String) -> Result<CompanyDTO, CompanyDTOError>{
         let db_connection = get_db_connection().await;
@@ -335,6 +355,43 @@ pub mod copmany_service_impl {
                 });
             }
         }
+    }
+
+    pub async fn find_member_assigned_area_by_member_id(company_member_id: Uuid, company_id: Uuid) -> Result<CompanyMemberAssignedAreaDTO, CompanyMemberAssignedAreaError> {
+        let db_connection = get_db_connection().await;
+
+        match db_connection {
+            Ok(conn) => {
+                let statement = format!("SELECT * FROM company_member_assigned_areas AS ca JOIN company_member AS cm on ca.company_member_id = cm.id WHERE ca.company_member_id = {company_member_id}");
+
+                let result = sqlx::query_as::<_, RecordCompanyMemberAssignedArea>(sqlx::AssertSqlSafe(statement))
+                    .bind(company_member_id)
+                    .fetch_one(&conn)
+                    .await;
+
+                match result {
+                    Ok(res) => {
+                        
+                        return Ok(CompanyMemberAssignedAreaDTO {  });
+                    },
+                    Err(err) => {
+                        tracing::warn!("error occurred while getting company member by id: {} with company member id. message: {}", company_member_id, err.to_string());
+                        return Err(CompanyMemberAssignedAreaError { 
+                            error_code: 500.to_string(), 
+                            error_message: err.to_string()
+                        });
+                    }
+                }
+            },
+            Err(err) => {
+                tracing::warn!("error occurred db connection while getting company member by id: {} with company member id. message: {}", company_member_id, err.to_string());
+                return Err(CompanyMemberAssignedAreaError { 
+                    error_code: 500.to_string(), 
+                    error_message: err.to_string()
+                });
+            }
+        }
+
     }
 
     async fn get_db_connection() -> Result<sqlx::PgPool, sqlx::Error> {

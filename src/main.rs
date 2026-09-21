@@ -12,7 +12,7 @@ use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use uuid::Uuid;
 
 use crate::api_client_service_impl::api_client_service_impl::ApiClientCredential;
-use crate::company_service_impl::copmany_service_impl::{CompanyDTO};
+use crate::company_service_impl::copmany_service_impl::{CompanyDTO, CompanyMemberDTO};
 
 mod api_client_service_impl;
 mod categories_service_impl;
@@ -232,6 +232,18 @@ pub struct WithinFenceRequestFilter {
     pub lng: f32,
     pub elevation: Option<f32>,
     pub company_member_id: String
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+pub struct CompanyMemberResponse {
+    status: u16,
+    message: String,
+    limit: i32,
+    offset: i32,
+    total_count: i32,
+    errors: Vec<ResponseError>,
+    data: Vec<CompanyMemberDTO>
 }
 
 #[rocket::async_trait]
@@ -1038,6 +1050,25 @@ async fn get_company_by_id(
 }
 
 //get a list of members of a company by id
+#[get("/v1/companies/<company_id>/members?<pagination..>")]
+pub async fn get_company_members(company_id: String, pagination: FilterOptions, auth: Credential<CustomAuthentication>) -> (Status, Json<CompanyMemberResponse>) {
+    let mut status_code: u16 = 200;
+    let mut total_count: i32 = 0;
+    let subject = &auth.subject;
+
+    tracing::info!("initiating get company by subject: {} id: {}", subject, company_id);
+
+    let response = CompanyMemberResponse{
+        status: status_code,
+        message: "".to_string(),
+        limit: 0,
+        offset: 0,
+        total_count: total_count,
+        errors: Vec::new(),
+        data: Vec::new()
+    };
+    return (Status::from_code(status_code).unwrap(), Json(response));
+}
 
 //configure a geofenece for a company
 
@@ -1230,7 +1261,8 @@ fn rocket() -> _ {
                 get_company_by_id,
                 get_companies,
                 create_company,
-                is_within_fence
+                is_within_fence,
+                get_company_members
             ],
         )
 }

@@ -24,11 +24,23 @@ use crate::{WithinFenceRequestFilter, WithinFenceResult, company_service_impl};
 
                     Ok(member) => {
                         let company = member.company;
+                        let company_id = Uuid::from_str(&company.id).unwrap();
+
+                        let company_assigned_area = company_service_impl::copmany_service_impl::find_member_assigned_area_by_member_id(id, company_id).await;
                         
-                        return Ok(WithinFenceResult {  });
+                        match company_assigned_area {
+                            Ok(area) => {
+                                
+                                return Ok(WithinFenceResult {  });
+                            },
+                            Err(err) => {
+                                tracing::warn!("is_within_fence: error occurred while getting company member by id: {} assigned area. message: {}", id, err.error_message);
+                                return Err(WithinFenceResultError { error_code: err.error_code , error_message: err.error_message });
+                            }
+                        }
                     },
                     Err(err) => {
-                        tracing::warn!("is_within_fence: error occurred while getting compnay member by id: {}. message: {}", id, err.error_message);
+                        tracing::warn!("is_within_fence: error occurred while getting company member by id: {}. message: {}", id, err.error_message);
 
                         return Err(WithinFenceResultError {
                             error_code: 400.to_string(),
