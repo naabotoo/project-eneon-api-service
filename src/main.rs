@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
 use jwt_service_impl::jwt_service_impl::JWTTokenResponse;
@@ -323,6 +324,15 @@ impl Authorization for CustomAuthentication {
         };
     }
 }
+
+
+impl fmt::Display for WithinFenceRequestFilter {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} ({},{})", self.company_member_id.clone(), self.lat.clone(), self.lng.clone())
+    }
+}
+
+
 
 #[get("/", format = "json")]
 async fn index() -> Json<IndexPageResponse> {

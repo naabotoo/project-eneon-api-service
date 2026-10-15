@@ -362,7 +362,7 @@ pub mod copmany_service_impl {
 
         match db_connection {
             Ok(conn) => {
-                let statement = format!("SELECT * FROM company_member_assigned_areas AS ca JOIN company_member AS cm on ca.company_member_id = cm.id WHERE ca.company_member_id = {company_member_id}");
+                let statement = format!("SELECT * FROM company_member_assigned_areas AS ca JOIN company_members AS cm on ca.company_member_id = cm.id WHERE ca.company_member_id = '{company_member_id}'");
 
                 let result = sqlx::query_as::<_, RecordCompanyMemberAssignedArea>(sqlx::AssertSqlSafe(statement))
                     .bind(company_member_id)
@@ -377,7 +377,7 @@ pub mod copmany_service_impl {
                     Err(err) => {
                         tracing::warn!("error occurred while getting company member by id: {} with company member id. message: {}", company_member_id, err.to_string());
                         return Err(CompanyMemberAssignedAreaError { 
-                            error_code: 500.to_string(), 
+                            error_code: 400.to_string(), 
                             error_message: err.to_string()
                         });
                     }

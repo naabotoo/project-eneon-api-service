@@ -14,6 +14,8 @@ use crate::{WithinFenceRequestFilter, WithinFenceResult, company_service_impl};
     pub async fn is_within_fence(subject: &String, query: WithinFenceRequestFilter) -> Result<WithinFenceResult, WithinFenceResultError>{
         let company_member_id = query.company_member_id;
 
+        tracing::info!("initiating is within fence by subject: {} with payload:", subject);
+
         let id_as_uuid = Uuid::from_str(&company_member_id);
 
         match id_as_uuid {
